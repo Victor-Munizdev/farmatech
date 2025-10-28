@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FarmaTech — Sistema de Chamados (Landing)</title>
+  <meta name="description" content="Landing page do projeto 'Sistema de Automação de Chamados com IA' — protótipos web interativos." />
+  <style>
+    :root {
+      --bg:#0f1724; --card:#0b1220; --muted:#94a3b8; --accent:#06b6d4;
+      --glass: rgba(255,255,255,0.04); --radius:14px;
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    *{box-sizing:border-box;}
+    body{margin:0;background:linear-gradient(180deg,#071027 0%, #081229 60%); color:#e6eef6;}
+    .container{max-width:1200px;margin:36px auto;padding:24px;}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+    .brand{display:flex;align-items:center;gap:12px;}
+    .logo{width:52px;height:52px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#3b82f6);display:grid;place-items:center;font-weight:700;}
+    h1{margin:0;font-size:22px;}
+    p.lead{color:var(--muted);margin:6px 0 0;}
+    nav a{color:var(--muted);text-decoration:none;margin-left:18px;}
+    .hero{display:grid;grid-template-columns:1fr 520px;gap:28px;margin-top:28px;align-items:center;}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border-radius:var(--radius);padding:20px;box-shadow:0 6px 18px rgba(0,0,0,0.6);}
+    .cta{display:flex;gap:12px;margin-top:18px;}
+    .btn{background:var(--accent);border:none;padding:12px 16px;border-radius:10px;color:#062023;font-weight:600;cursor:pointer;}
+    .btn.alt{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);}
+    .preview{background:var(--card);border-radius:12px;padding:12px;height:640px;display:flex;flex-direction:column;}
+    .preview-top{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;}
+    .browser-bar{display:flex;align-items:center;gap:8px;}
+    .dot{width:10px;height:10px;border-radius:50%;}
+    .dot.r{background:#ff6b6b;}
+    .dot.y{background:#ffd166;}
+    .dot.g{background:#6ef08a;}
+    .iframe{flex:1;background:linear-gradient(180deg,#0a1726 0%, #071023 100%);border-radius:8px;padding:18px;overflow:auto;}
+    .screens-list{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+    .screen-thumb{background:var(--glass);padding:8px;border-radius:8px;cursor:pointer;border:1px solid transparent;}
+    .screen-thumb.active{outline:2px solid rgba(6,182,212,0.16);border-color:rgba(255,255,255,0.03);}
+    .mock{background:#071829;border-radius:8px;padding:18px;color:#dbeafe;height:100%; overflow:auto;}
+    .login .box{max-width:360px;margin:40px auto;}
+    .input{display:block;width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:inherit;margin-bottom:12px;}
+    .ticket{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:12px;border-radius:10px;margin-bottom:12px;}
+    .pill{display:inline-block;padding:6px 8px;border-radius:999px;font-size:12px;background:rgba(255,255,255,0.03);}
+    footer{margin-top:28px;color:var(--muted);font-size:13px;display:flex;justify-content:space-between;align-items:center;}
+    @media (max-width:1000px){.hero{grid-template-columns:1fr;}.preview{height:520px;}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="logo">FT</div>
+        <div>
+          <h1>FarmaTech — Sistema de Chamados</h1>
+          <p class="lead">Protótipos web interativos do seu projeto PIM III</p>
+        </div>
+      </div>
+      <nav>
+        <a href="#">Visão geral</a>
+        <a href="#">Protótipos</a>
+        <a href="#">Documentação</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="preview card">
+        <div class="preview-top">
+          <div class="browser-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+          <div style="color:var(--muted);font-size:13px">Simulação de protótipo web • FarmaTech</div>
+        </div>
+        <div id="iframe" class="iframe"></div>
+        <div class="screens-list" id="screens">
+          <div class="screen-thumb active" data-screen="login">Login</div>
+          <div class="screen-thumb" data-screen="tickets">Lista de Chamados</div>
+          <div class="screen-thumb" data-screen="chat-ia">Chat IA</div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div>Universidade Paulista — PIM III • 2025</div>
+      <div>Equipe: Ana, Anita, Ester, Gabriel, Kaua, Ryan</div>
+    </footer>
+  </div>
+
+  <script>
+    // Carrega fragments HTML de /fragments/{name}.html
+    async function loadTemplate(name) {
+      try {
+        const path = `/fragments/${name}.html`;
+        const res = await fetch(path);
+        if (!res.ok) throw new Error('Falha ao carregar ' + path);
+        return await res.text();
+      } catch (err) {
+        console.error(err);
+        return `<div class="mock"><p style="color:var(--muted)">Erro ao carregar a tela: ${name}</p></div>`;
+      }
+    }
+
+    const iframe = document.getElementById('iframe');
+    const screens = document.getElementById('screens');
+
+    async function render(screen) {
+      const html = await loadTemplate(screen);
+      iframe.innerHTML = html || '';
+      document.querySelectorAll('.screen-thumb').forEach(t =>
+        t.classList.toggle('active', t.dataset.screen === screen)
+      );
+    }
+
+    screens.addEventListener('click', e => {
+      const el = e.target.closest('.screen-thumb');
+      if (!el) return;
+      render(el.dataset.screen);
+      if (el.dataset.screen === 'chat-ia') initChatling();
+    });
+
+    // Inicializa o widget Chatling apenas quando a tela 'chat-ia' for exibida.
+    function initChatling() {
+      // Se o script já foi carregado, não carregar novamente
+      if (document.getElementById('chtl-script') || window._chtlInitialized) return;
+      window.chtlConfig = { chatbotId: "6974362232", display: "page_inline" };
+      const s = document.createElement('script');
+      s.async = true;
+      s.dataset.id = "6974362232";
+      s.dataset.display = "page_inline";
+      s.id = 'chtl-script';
+      s.type = 'text/javascript';
+      s.src = 'https://chatling.ai/js/embed.js';
+      document.body.appendChild(s);
+      window._chtlInitialized = true;
+    }
+
+    render('login');
+
+    function login() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      if (email === 'gabriel.damiao@farmatech.com' && password === '123456') {
+        document.getElementById('loginResult').innerText = "Login OK!";
+      } else {
+        document.getElementById('loginResult').innerText = "Email ou senha incorretos";
+      }
+    }
+
+    function getTickets() {
+      const tickets = [
+        { Id: 1, Title: 'Erro no login', Status: 'Aberto' },
+        { Id: 2, Title: 'Falha no envio de email', Status: 'Em andamento' }
+      ];
+      const container = document.getElementById('ticketList');
+      container.innerHTML = '';
+      tickets.forEach(t => {
+        const div = document.createElement('div');
+        div.className = 'ticket';
+        div.innerHTML = `<strong>ID:</strong> ${t.Id} <strong>Título:</strong> ${t.Title} <span class="pill">${t.Status}</span>`;
+        container.appendChild(div);
+      });
+    }
+
+    async function sendChat() {
+      const message = document.getElementById('chatMessage').value;
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ user: 'gabriel.damiao@farmatech.com', message })
+      });
+      const data = await res.json();
+      document.getElementById('chatResponse').innerText = data.Response;
+    }
+  </script>
+  <!-- Widget global removido: o Chatling agora é carregado apenas quando a aba 'Chat IA' for exibida -->
+</body>
+</html>
