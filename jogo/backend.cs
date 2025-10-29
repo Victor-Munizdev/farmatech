@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.Json;
+using System.Web.Script.Serialization;
 using System.Net.Http;
 
 class GameAnalysis
@@ -31,17 +31,17 @@ class Program
     static readonly HttpClient httpClient = new HttpClient();
     static readonly string geminiApiKey = "AIzaSyDafrIdzLzhIfOdK8oRFmwyleYpmDcK3Mc";
 
-    static async Task Main()
+    static void Main()
     {
         HttpListener listener = new HttpListener();
-        listener.Prefixes.Add("http://localhost:5002/");
+        listener.Prefixes.Add("http://localhost:8002/");
         listener.Start();
-        Console.WriteLine("Servidor de Análise de Jogos rodando em http://localhost:5002/");
+        Console.WriteLine("Servidor de Análise de Jogos rodando em http://localhost:8002/");
         Console.WriteLine("Pressione Ctrl+C para parar.");
 
         while (true)
         {
-            var context = await listener.GetContextAsync();
+            HttpListenerContext context = listener.GetContext();
             Task.Run(() => HandleRequest(context));
         }
     }
@@ -61,12 +61,15 @@ class Program
         }
         else if (path == "/analyze-game" && method == "POST")
         {
-            using var reader = new StreamReader(context.Request.InputStream);
-            var body = reader.ReadToEnd();
-            var data = JsonSerializer.Deserialize<Dictionary<string, string>>(body);
+            using (StreamReader reader = new StreamReader(context.Request.InputStream))
+            {
+                string body = reader.ReadToEnd();
+                JavaScriptSerializer serializer = new JavaScriptSerializer();
+                Dictionary<string, string> data = serializer.Deserialize<Dictionary<string, string>>(body);
+            }
 
             // Simular análise (em produção, buscar dados reais de API de futebol)
-            var analysis = new GameAnalysis
+            GameAnalysis analysis = new GameAnalysis
             {
                 Team1 = "Bahia",
                 Team2 = "Vitória",
@@ -88,17 +91,20 @@ class Program
         }
         else if (path == "/ai-analysis" && method == "POST")
         {
-            using var reader = new StreamReader(context.Request.InputStream);
-            var body = reader.ReadToEnd();
-            var data = JsonSerializer.Deserialize<Dictionary<string, string>>(body);
-
-            string aiResponse = GetGeminiAnalysis(data["prompt"]);
-
-            var response = new
+            using (StreamReader reader = new StreamReader(context.Request.InputStream))
             {
-                analysis = aiResponse
-            };
-            WriteResponse(context, response);
+                string body = reader.ReadToEnd();
+                JavaScriptSerializer serializer = new JavaScriptSerializer();
+                Dictionary<string, string> data = serializer.Deserialize<Dictionary<string, string>>(body);
+
+                string aiResponse = GetGeminiAnalysis(data["prompt"]);
+
+                var response = new
+                {
+                    analysis = aiResponse
+                };
+                WriteResponse(context, response);
+            }
         }
         else
         {
@@ -126,21 +132,40 @@ class Program
                 }
             };
 
-            var jsonRequest = JsonSerializer.Serialize(requestBody);
-            var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+            JavaScriptSerializer serializer = new JavaScriptSerializer();
+            string jsonRequest = serializer.Serialize(requestBody);
+            StringContent content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
 
-            var response = httpClient.PostAsync($"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={geminiApiKey}", content).Result;
+            HttpResponseMessage response = httpClient.PostAsync($"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={geminiApiKey}", content).Result;
             response.EnsureSuccessStatusCode();
 
-            var responseString = response.Content.ReadAsStringAsync().Result;
-            var geminiResponse = JsonSerializer.Deserialize<JsonElement>(responseString);
+            string responseString = response.Content.ReadAsStringAsync().Result;
+            JavaScriptSerializer jsonSerializer = new JavaScriptSerializer();
+            Dictionary<string, object> geminiResponse = jsonSerializer.Deserialize<Dictionary<string, object>>(responseString);
 
-            if (geminiResponse.TryGetProperty("candidates", out var candidates) &&
-                candidates[0].TryGetProperty("content", out var contentProp) &&
-                contentProp.TryGetProperty("parts", out var parts) &&
-                parts[0].TryGetProperty("text", out var text))
+            if (geminiResponse.ContainsKey("candidates"))
             {
-                return text.GetString();
+                var candidates = (object[])geminiResponse["candidates"];
+                if (candidates.Length > 0)
+                {
+                    var candidate = (Dictionary<string, object>)candidates[0];
+                    if (candidate.ContainsKey("content"))
+                    {
+                        var contentObj = (Dictionary<string, object>)candidate["content"];
+                        if (contentObj.ContainsKey("parts"))
+                        {
+                            var parts = (object[])contentObj["parts"];
+                            if (parts.Length > 0)
+                            {
+                                var part = (Dictionary<string, object>)parts[0];
+                                if (part.ContainsKey("text"))
+                                {
+                                    return (string)part["text"];
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             return "Erro ao processar resposta da IA.";
@@ -153,7 +178,8 @@ class Program
 
     static void WriteResponse(HttpListenerContext context, object data)
     {
-        string json = JsonSerializer.Serialize(data);
+        JavaScriptSerializer serializer = new JavaScriptSerializer();
+        string json = serializer.Serialize(data);
         byte[] buffer = Encoding.UTF8.GetBytes(json);
         context.Response.ContentLength64 = buffer.Length;
         context.Response.OutputStream.Write(buffer, 0, buffer.Length);
