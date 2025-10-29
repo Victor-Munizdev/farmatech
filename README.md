@@ -1,6 +1,6 @@
 # FarmaTech — Sistema de Chamados
 
-Sistema de automação de chamados com IA integrada para a empresa FarmaTech.
+Sistema de automação de chamados com IA integrada.
 
 ## 📋 Sobre o Projeto
 
@@ -104,7 +104,8 @@ O analisador será iniciado em **http://localhost:8002**
 - ✅ Respostas contextuais sobre chamados
 - ✅ Suporte técnico automatizado
 
-### Análise de Jogos
+
+### Análise de Jogos (Sub Página)
 - ✅ Análise de jogos esportivos
 - ✅ Probabilidades de vitória/empate/derrota
 - ✅ Estatísticas visuais
