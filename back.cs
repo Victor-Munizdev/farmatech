@@ -33,7 +33,9 @@ class Program
 {
     static readonly HttpClient httpClient = new HttpClient();
     static readonly string geminiApiKey = "AIzaSyDafrIdzLzhIfOdK8oRFmwyleYpmDcK3Mc";
-    static User testUser = new User { Email = "gabriel.damiao@farmatech.com", Password = "123456" };
+    // Usuário mokado para teste!
+    static User testUser = new User { Email = "gabriel.veiga@farmatech.com", Password = "123456" };
+    // Chamados mokados!
     static List<Ticket> tickets = new List<Ticket>
     {
         new Ticket { Id = 1, Title = "Erro no login", Description = "Não é possível entrar no sistema", Status = "Aberto" },
@@ -112,6 +114,20 @@ class Program
             };
             WriteResponse(context, response);
         }
+        else if (path == "/analyze-game" && method == "POST")
+        {
+            using var reader = new StreamReader(context.Request.InputStream);
+            var body = reader.ReadToEnd();
+            var data = JsonSerializer.Deserialize<Dictionary<string, string>>(body);
+
+            string analysis = await GetGeminiResponse(data["prompt"]);
+
+            var response = new
+            {
+                analysis = analysis
+            };
+            WriteResponse(context, response);
+        }
         else if (path.StartsWith("/fragments/") && method == "GET")
         {
             try
@@ -183,7 +199,7 @@ class Program
             var jsonRequest = JsonSerializer.Serialize(requestBody);
             var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
 
-            var response = await httpClient.PostAsync($"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={geminiApiKey}", content);
+            var response = await httpClient.PostAsync($"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={geminiApiKey}", content);
             response.EnsureSuccessStatusCode();
 
             var responseString = await response.Content.ReadAsStringAsync();
