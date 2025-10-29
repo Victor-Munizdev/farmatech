@@ -29,7 +29,7 @@ class GameStats
 class Program
 {
     static readonly HttpClient httpClient = new HttpClient();
-    static readonly string geminiApiKey = "AIzaSyDafrIdzLzhIfOdK8oRFmwyleYpmDcK3Mc";
+    static readonly string geminiApiKey = "----------API_KEY_AQUI----------";
 
     static void Main()
     {
