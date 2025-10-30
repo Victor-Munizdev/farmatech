@@ -32,7 +32,7 @@ class ChatMessage
 class Program
 {
     static readonly HttpClient httpClient = new HttpClient();
-    static readonly string geminiApiKey = "----------API_KEY_AQUI----------";
+    static readonly string geminiApiKey = "AIzaSyDafrIdzLzhIfOdK8oRFmwyleYpmDcK3Mc";
     // Usuário mokado para teste!
     static User testUser = new User { Email = "gabriel.veiga@farmatech.com", Password = "123456" };
     // Chamados mokados!
